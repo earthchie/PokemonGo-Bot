@@ -77,8 +77,6 @@ class PokemonCatchWorker(object):
                                     pokeball = 2 # then use great balls
                                 elif balls_stock[3] > 0: # or if great balls are out of stock too, and player has ultra balls...
                                     pokeball = 3 # then use ultra balls
-                                else:
-                                    pokeball = 0 # player doesn't have any of pokeballs, great balls or ultra balls
                             
                             ## Use berry to increase success chance.
                             berry_id = 701 # @ TODO: use better berries if possible
