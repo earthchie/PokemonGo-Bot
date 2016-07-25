@@ -375,6 +375,24 @@ class PokemonGoBot(object):
             'utf-8')))
         logger.log('[x] Position in-game set as: {}'.format(self.position))
         logger.log('')
+    
+    def item_inventory_count(self, id):
+        self.api.get_player().get_inventory()
+
+        inventory_req = self.api.call()
+        inventory_dict = inventory_req['responses'][
+            'GET_INVENTORY']['inventory_delta']['inventory_items']
+
+        item_count = 0
+
+        for item in inventory_dict:
+            try:
+                if item['inventory_item_data']['item']['item_id'] == int(id):
+                    item_count = item[
+                        'inventory_item_data']['item']['count']
+            except:
+                continue
+        return item_count
 
     def _get_pos_by_name(self, location_name):
         geolocator = GoogleV3(api_key=self.config.gmapkey)

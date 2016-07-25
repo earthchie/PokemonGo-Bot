@@ -4,6 +4,7 @@ import time
 from sets import Set
 from utils import distance, print_green, print_yellow, print_red
 from pokemongo_bot.human_behaviour import sleep
+from random import uniform
 
 class PokemonCatchWorker(object):
 
@@ -37,6 +38,7 @@ class PokemonCatchWorker(object):
                         if 'wild_pokemon' in response_dict['responses']['ENCOUNTER']:
                             
                             pokemon=response_dict['responses']['ENCOUNTER']['wild_pokemon']
+                            catch_rate=response_dict['responses']['ENCOUNTER']['capture_probability']['capture_probability'] # 0 = pokeballs, 1 great balls, 3 ultra balls
                             if 'pokemon_data' in pokemon and 'cp' in pokemon['pokemon_data']:
                                 
                                 cp=pokemon['pokemon_data']['cp']
@@ -68,35 +70,70 @@ class PokemonCatchWorker(object):
                         while(True):
                             pokeball = 0
 
-                            if balls_stock[1] > 0:
-                                #print 'use Poke Ball'
-                                pokeball = 1
+                            pokeball = 1 # default:poke ball
 
-                            if cp > 300 and balls_stock[2] > 0:
-                                #print 'use Great Ball'
-                                pokeball = 2
+                            if balls_stock[1] <= 0: # if poke ball are out of stock
+                                if balls_stock[2] > 0: # and player has great balls in stock...
+                                    pokeball = 2 # then use great balls
+                                elif balls_stock[3] > 0: # or if great balls are out of stock too, and player has ultra balls...
+                                    pokeball = 3 # then use ultra balls
+                                else:
+                                    pokeball = 0 # player doesn't have any of pokeballs, great balls or ultra balls
+                            
+                            ## Use berry to increase success chance.
+                            berry_id = 701 # @ TODO: use better berries if possible
+                            berries_count = self.bot.item_inventory_count(berry_id)
+                            if(catch_rate[pokeball-1] < 0.5 and berries_count > 0): # and berry is in stock
+                                success_percentage = '{0:.2f}'.format(catch_rate[pokeball-1]*100)
+                                print('[x] Catch Rate with normal Pokeball is low ({}%). Throwing {}... ({} left!)'.format(success_percentage,self.item_list[str(berry_id)],berries_count-1))
+                                self.api.use_item_capture(
+                                    item_id=berry_id, 
+                                    encounter_id = encounter_id, 
+                                    spawn_point_guid = spawnpoint_id
+                                )
+                                response_dict = self.api.call()
+                                if response_dict and response_dict['status_code'] is 1 and 'item_capture_mult' in response_dict['responses']['USE_ITEM_CAPTURE']:
+                                   
+                                    for i in range(len(catch_rate)):
+                                        catch_rate[i] = catch_rate[i] * response_dict['responses']['USE_ITEM_CAPTURE']['item_capture_mult']
+                                        
+                                    success_percentage = '{0:.2f}'.format(catch_rate[pokeball-1]*100)
+                                    print('[#] Catch Rate with normal Pokeball has increased to {}%'.format(success_percentage))
+                                else:
+                                    print_red('[x] Fail to use berry. Status Code: {}'.format(response_dict['status_code']))
+                            
+                            
+                            next_ball_type = pokeball
+                            while(next_ball_type < 3):
+                                next_ball_type = next_ball_type+1
+                                if catch_rate[pokeball-1] < 0.20 and balls_stock[next_ball_type] > 0:
+                                    # if current ball chance to catch is under 20%, and player has better ball - then use it
+                                    pokeball = next_ball_type # use better ball
+                                
 
-                            if cp > 700 and balls_stock[3] > 0:
-                                #print 'use Utra Ball'
-                                pokeball = 3
+                            # @TODO, use the best ball in stock to catch VIP (Very Important Pokemon: Configurable)
 
                             if pokeball is 0:
                                 print_red('[x] Out of pokeballs, switching to farming mode...')
                                 # Begin searching for pokestops.
-                                self.config.mode='farm'
-                                break
-
-                            print('[x] Using {}...'.format(self.item_list[str(pokeball)]))
+                                self.config.mode = 'farm'
 
                             balls_stock[pokeball] = balls_stock[pokeball] - 1
+                            success_percentage = '{0:.2f}'.format(catch_rate[pokeball-1]*100)
+                            print('[x] Using {} (chance: {}%)... ({} left!)'.format(
+                                self.item_list[str(pokeball)], 
+                                success_percentage, 
+                                balls_stock[pokeball]
+                            ))
+
                             id_list1 = self.count_pokemon_inventory()
                             self.api.catch_pokemon(encounter_id = encounter_id,
                                 pokeball = pokeball,
-                                normalized_reticle_size = 1.950,
+                                normalized_reticle_size = uniform(1, 3),
                                 spawn_point_guid = spawnpoint_id,
                                 hit_pokemon = 1,
-                                spin_modifier = 1,
-                                NormalizedHitPosition = 1)
+                                spin_modifier = uniform(0.8, 1),
+                                NormalizedHitPosition = uniform(0.8, 1.3))
                             response_dict = self.api.call()
 
                             if response_dict and \
@@ -121,14 +158,14 @@ class PokemonCatchWorker(object):
                                         if len(pokemon_to_transfer) == 0:
                                             raise RuntimeError('Trying to transfer 0 pokemons!')
                                         self.transfer_pokemon(pokemon_to_transfer[0])
-                                        print_green('[#] {} has been exchanged for candy!'.format(pokemon_name))
+                                        print('[#] {} has been exchanged for candy!'.format(pokemon_name))
                                     else:
                                         
-                                        print_green('[x] Captured {}! [CP {}]'.format(pokemon_name, cp))
+                                        print_red('[x] Captured {}! [CP {}]'.format(pokemon_name, cp))
                                         if whitelist:
                                             self.api.set_favorite_pokemon(pokemon_id=pokemon_to_transfer[0], is_favorite=True)
                                             response_dict = self.api.call()
-                                            print_green('[#] Favorited.')
+                                            print_red('[#] Favorited.')
                                             #print response_dict
                                         
                                         #nickname = '{}/{}/{}'.format(pokemon['pokemon_data']['individual_stamina'],pokemon['pokemon_data']['individual_attack'],pokemon['pokemon_data']['individual_defense'])
@@ -209,12 +246,20 @@ class PokemonCatchWorker(object):
     def is_meet_requirements(self, pokemon, requirements):
         
         try:
-            is_pass = True
-            is_pass = is_pass and (pokemon['cp'] >= requirements['min_cp'])
-            is_pass = is_pass and (pokemon['individual_stamina'] >= requirements['iv_min_stamina'])
-            is_pass = is_pass and (pokemon['individual_attack'] >= requirements['iv_min_attack'])
-            is_pass = is_pass and (pokemon['individual_defense'] >= requirements['iv_min_defense'])
-            return is_pass
+            if 'logic' in requirements and requirements['logic'] is 'or':
+                is_pass = False
+                is_pass = is_pass or (pokemon['cp'] >= requirements['min_cp'])
+                is_pass = is_pass or (pokemon['individual_stamina'] >= requirements['iv_min_stamina'])
+                is_pass = is_pass or (pokemon['individual_attack'] >= requirements['iv_min_attack'])
+                is_pass = is_pass or (pokemon['individual_defense'] >= requirements['iv_min_defense'])
+                return is_pass
+            else:
+                is_pass = True
+                is_pass = is_pass and (pokemon['cp'] >= requirements['min_cp'])
+                is_pass = is_pass and (pokemon['individual_stamina'] >= requirements['iv_min_stamina'])
+                is_pass = is_pass and (pokemon['individual_attack'] >= requirements['iv_min_attack'])
+                is_pass = is_pass and (pokemon['individual_defense'] >= requirements['iv_min_defense'])
+                return is_pass
         except:
             return False
         
