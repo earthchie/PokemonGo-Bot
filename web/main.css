@@ -17,8 +17,9 @@ html, body {
 #submenu {
 	position: fixed;
 	left: 20px;
-	top: 30%;
+	top: 10%;
 	max-height: 700px;
+	overflow: scroll;
 	width: 50%;
 	z-index: 6;
 	display: none;

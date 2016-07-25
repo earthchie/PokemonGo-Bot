@@ -16,6 +16,50 @@ var trainerSex = ["m","f"];
 var numTrainers = [177, 109];
 var menu;
 var stats = {};
+var _ITEMS_ = {
+    "0": "Unknown",
+
+    "1": "Pokeball",
+    "2": "Greatball",
+    "3": "Ultraball",
+    "4": "Masterball",
+
+    "101": "Potion",
+    "102": "Super Potion",
+    "103": "Hyper Potion",
+    "104": "Max Potion",
+
+    "201": "Revive",
+    "202": "Max Revive",
+
+    "301": "Lucky Egg",
+
+    "401": "Incense",
+    "402": "Spicy Incense",
+    "403": "Cool Incense",
+    "404": "Floral Incense",
+
+    "501": "Troy Disk",
+
+    "602": "X Attack",
+    "603": "X Defense",
+    "604": "X Miracle",
+
+    "701": "Razz Berry",
+    "702": "Bluk Berry",
+    "703": "Nanab Berry",
+    "704": "Wepar Berry",
+    "705": "Pinap Berry",
+
+    "801": "Special Camera",
+
+    "901": "Incubator (Unlimited)",
+    "902": "Incubator",
+
+    "1001": "Pokemon Storage Upgrade",
+    "1002": "Item Storage Upgrade"
+}
+
 
 function initMap() {
   // load pokemon data now..
@@ -139,7 +183,7 @@ var trainerFunc = function(data, user_index) {
               icon: "image/forts/Gym.png"
             });
           }
-          var contentString = fort.id + ' Type ' + fort.type
+          var contentString = fort.latitude+','+fort.longitude;
           info_windows[fort.id] = new google.maps.InfoWindow({
             content: contentString
           });
@@ -283,20 +327,50 @@ $(document).ready(function(){
 
 function buildMenu() {
   addInventory();
+  var data = {};
   if (menu == 1) {
     document.getElementById('subtitle').innerHTML = "Trainer Info";
-    document.getElementById('subcontent').innerHTML = stats;
+	data = stats.inventory_item_data.player_stats;
   }
   if (menu == 2) {
     document.getElementById('subtitle').innerHTML = "Items in Bag";
-    document.getElementById('subcontent').innerHTML = bagItems;
+	data = [];
+	for(var i in bagItems){
+		item = bagItems[i].inventory_item_data.item;
+		var it = {};
+		console.log(bagItems[i].inventory_item_data)
+		it[_ITEMS_[item.item_id]] = item.count || 0;
+		data.push(it)
+
+	}
   }
   if (menu == 3) {
     document.getElementById('subtitle').innerHTML = "Pokemon in Bag";
-    document.getElementById('subcontent').innerHTML = bagPokemon;
+	data = [];
+	for(var i in bagPokemon){
+		pkmn = bagPokemon[i].inventory_item_data.pokemon_data;
+		if(!pkmn.is_egg){
+			data.push({
+				id: pkmn.id,
+				Pokemon: '#'+pkmn.pokemon_id+' '+pokemonArray[pkmn.pokemon_id-1].Name,
+				Nickname: pkmn.nickname,
+				CP: pkmn.cp,
+				IVs: (pkmn.individual_stamina||0)+'/'+(pkmn.individual_attack||0)+'/'+(pkmn.individual_defense||0)
+			})
+		}
+	}
   }
   if (menu == 4) {
     document.getElementById('subtitle').innerHTML = "Pokedex";
-    document.getElementById('subcontent').innerHTML = pokedex;
+	data = pokedex;
   }
+  document.getElementById('subcontent').innerHTML = '';
+	if($.isArray(data)){
+	  for(var i in data){
+		  document.getElementById('subcontent').appendChild(prettyPrint(data[i]),{maxDepth:10});
+	  }
+	}else{
+		document.getElementById('subcontent').appendChild(prettyPrint(data),{maxDepth:10});
+	}
+  
 }
