@@ -146,29 +146,29 @@ class PokemonCatchWorker(object):
                                     print_red('[x] Oh no! {} vanished! :('.format(pokemon_name))
                                 if status is 1:
                                     id_list2 = self.count_pokemon_inventory()
-                                    pokemon_to_transfer = list(Set(id_list2) - Set(id_list1))
-                                    
+                                    pkmn_id = list(Set(id_list2) - Set(id_list1))
+
                                     if not whitelist and (cp < self.config.cp or pokemon_potential < self.config.pokemon_potential):
-                                        print_green('[x] Captured {}! [CP {}] [IV {}] - exchanging for candy'.format(pokemon_name, cp, pokemon_potential))
+                                        print('[x] Captured {}! [CP {}] [IV {}] - exchanging for candy'.format(pokemon_name, cp, pokemon_potential))
                                         
                                         # Transfering Pokemon
-                                        if len(pokemon_to_transfer) == 0:
+                                        if len(pkmn_id) == 0:
                                             raise RuntimeError('Trying to transfer 0 pokemons!')
-                                        self.transfer_pokemon(pokemon_to_transfer[0])
-                                        print('[#] {} has been exchanged for candy!'.format(pokemon_name))
-                                    else:
-                                        
-                                        print_red('[x] Captured {}! [CP {}]'.format(pokemon_name, cp))
+                                            
+                                        self.transfer_pokemon(pkmn_id[0])
+                                    else:   
+                                        print_green('[x] Captured {}! [CP {}]'.format(pokemon_name, cp))
+                                    
                                         if whitelist:
-                                            #self.api.set_favorite_pokemon(pokemon_id=pokemon_to_transfer[0], is_favorite=True)
+                                            #self.api.set_favorite_pokemon(pokemon_id=pkmn_id[0], is_favorite=True)
                                             #response_dict = self.api.call()
                                             #print_red('[#] Favorited.')
                                             #print response_dict
                                         
                                             nickname = '{}/{}/{}'.format(pokemon['pokemon_data']['individual_stamina'],pokemon['pokemon_data']['individual_attack'],pokemon['pokemon_data']['individual_defense'])
-                                            self.api.nickname_pokemon(pokemon_id=pokemon_to_transfer[0],nickname=nickname)
+                                            self.api.nickname_pokemon(pokemon_id=pkmn_id[0],nickname=nickname)
                                             response_dict = self.api.call()
-                                            print('[#] nicknamed to {}'.format(nickname))
+                                            print('[#] Nicknamed to {}'.format(nickname))
                                             
                                         
                             break

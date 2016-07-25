@@ -12,6 +12,7 @@ from pokemongo_bot import logger
 class SeenFortWorker(object):
     def __init__(self, fort, bot):
         self.fort = fort
+        self.bot = bot
         self.api = bot.api
         self.position = bot.position
         self.config = bot.config
@@ -23,16 +24,22 @@ class SeenFortWorker(object):
         lat = self.fort['latitude']
         lng = self.fort['longitude']
         unit = self.config.distance_unit  # Unit to use when printing formatted distance
-
+        
         fortID = self.fort['id']
         dist = distance(self.position[0], self.position[1], lat, lng)
-
+        
+        self.api.fort_details(fort_id=self.fort['id'],
+                              latitude=lat,
+                              longitude=lng)
+        response_dict = self.api.call()
+        fort_details = response_dict['responses']['FORT_DETAILS']
+        fort_name = fort_details['name'].encode('utf8', 'replace')
         # print('[#] Found fort {} at distance {}m'.format(fortID, dist))
-        logger.log('[#] Found fort {} at distance {}'.format(
-            fortID, format_dist(dist, unit)))
+        logger.log('[#] Heading to {} ({})'.format(
+            fort_name, format_dist(dist, unit)))
 
         if dist > 10:
-            logger.log('[#] Need to move closer to Pokestop')
+            #logger.log('[#] Need to move closer to Pokestop')
             position = (lat, lng, 0.0)
 
             if self.config.walk > 0:
@@ -73,8 +80,7 @@ class SeenFortWorker(object):
                 experience_awarded = spin_details.get('experience_awarded',
                                                       False)
                 if experience_awarded:
-                    logger.log("[+] " + str(experience_awarded) + " xp",
-                               'green')
+                    logger.log("[+] " + str(experience_awarded) + " xp",'green')
 
                 items_awarded = spin_details.get('items_awarded', False)
                 if items_awarded:
@@ -90,8 +96,26 @@ class SeenFortWorker(object):
                         item_id = str(item_id)
                         item_name = self.item_list[item_id]
 
-                        logger.log("[+] " + str(item_count) + "x " + item_name,
-                                   'green')
+                        logger.log("[+] " + str(item_count) +
+                                    " x " + item_name +
+                                    " (Total: " + str(self.bot.item_inventory_count(item_id)) + ")", 'green')
+                        
+                        # RECYCLING UNWANTED ITEMS
+                        if item_id in self.config.item_filter:
+                            
+                            #RECYCLE_INVENTORY_ITEM
+                            self.api.recycle_inventory_item(item_id=int(item_id), count=item_count)
+                            response_dict_recycle = self.api.call()
+                            result = -1
+                            if response_dict_recycle and \
+                                'responses' in response_dict_recycle and \
+                                'RECYCLE_INVENTORY_ITEM' in response_dict_recycle['responses'] and \
+                                    'result' in response_dict_recycle['responses']['RECYCLE_INVENTORY_ITEM']:
+                                result = response_dict_recycle['responses']['RECYCLE_INVENTORY_ITEM']['result']
+                            if result is 1: # Request success
+                                logger.log("[+] Dropped: " + str(item_count) + " x " + item_name + "...", 'yellow')
+                            else:
+                                logger.log("[-] Drop item failed!", 'red')
 
                 else:
                     logger.log("[#] Nothing found.", 'yellow')

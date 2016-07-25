@@ -205,8 +205,7 @@ class PokemonGoBot(object):
 
     def drop_item(self, item_id, count):
         self.api.recycle_inventory_item(item_id=item_id, count=count)
-        inventory_req = self.api.call()
-        print(inventory_req)
+        return self.api.call()
 
     def initial_transfer(self):
         logger.log('[x] Initial Transfer.')

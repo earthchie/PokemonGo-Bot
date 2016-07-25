@@ -54,7 +54,7 @@ def init_config():
     if os.path.isfile(config_file):
         with open(config_file) as data:
             load.update(json.load(data))
-    
+
     # Read passed in Arguments
     required = lambda x: not x in load
     parser.add_argument("-a",
@@ -128,16 +128,29 @@ def init_config():
         "Set the unit to display distance in (e.g, km for kilometers, mi for miles, ft for feet)",
         type=str,
         default="km")
+        
+    parser.add_argument(
+        "-if",
+        "--item_filter",
+        help=
+        "Pass a list of unwanted items to recycle when collected at a Pokestop (e.g, SYNTAX FOR CONFIG.JSON : [\"101\",\"102\",\"103\",\"104\"] to recycle potions when collected, SYNTAX FOR CONSOLE ARGUMENT : \"101\",\"102\",\"103\",\"104\")",
+        type=list,
+        default=[])
+        
     config = parser.parse_args()
     if not config.username and not 'username' in load:
         config.username = raw_input("Username: ")
     if not config.password and not 'password' in load:
         config.password = getpass("Password: ")
-
+    
     # Passed in arguments shoud trump
     for key in config.__dict__:
         if key in load:
             config.__dict__[key] = load[key]
+            
+    if isinstance(config.item_filter, basestring):
+        #When config.item_filter looks like "101,102,103" needs to be converted to ["101","102","103"]
+        config.item_filter = config.item_filter.split(",")
 
     if config.auth_service not in ['ptc', 'google']:
         logging.error("Invalid Auth service specified! ('ptc' or 'google')")
