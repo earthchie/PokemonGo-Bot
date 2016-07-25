@@ -68,7 +68,6 @@ class PokemonCatchWorker(object):
 
                         balls_stock = self.bot.pokeball_inventory();
                         while(True):
-                            pokeball = 0
 
                             pokeball = 1 # default:poke ball
 
@@ -77,7 +76,12 @@ class PokemonCatchWorker(object):
                                     pokeball = 2 # then use great balls
                                 elif balls_stock[3] > 0: # or if great balls are out of stock too, and player has ultra balls...
                                     pokeball = 3 # then use ultra balls
-                            
+                                    
+                            if balls_stock[pokeball] is 0:
+                                print_red('[x] Out of pokeballs, switching to farming mode...')
+                                # Begin searching for pokestops.
+                                self.config.mode = 'farm'
+                                
                             ## Use berry to increase success chance.
                             berry_id = 701 # @ TODO: use better berries if possible
                             berries_count = self.bot.item_inventory_count(berry_id)
@@ -110,11 +114,6 @@ class PokemonCatchWorker(object):
                                 
 
                             # @TODO, use the best ball in stock to catch VIP (Very Important Pokemon: Configurable)
-
-                            if pokeball is 0:
-                                print_red('[x] Out of pokeballs, switching to farming mode...')
-                                # Begin searching for pokestops.
-                                self.config.mode = 'farm'
 
                             balls_stock[pokeball] = balls_stock[pokeball] - 1
                             success_percentage = '{0:.2f}'.format(catch_rate[pokeball-1]*100)
