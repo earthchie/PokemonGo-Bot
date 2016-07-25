@@ -93,7 +93,7 @@ class PokemonCatchWorker(object):
                                 )
                                 response_dict = self.api.call()
                                 if response_dict and response_dict['status_code'] is 1 and 'item_capture_mult' in response_dict['responses']['USE_ITEM_CAPTURE']:
-                                   
+                                    
                                     for i in range(len(catch_rate)):
                                         catch_rate[i] = catch_rate[i] * response_dict['responses']['USE_ITEM_CAPTURE']['item_capture_mult']
                                         
@@ -106,8 +106,8 @@ class PokemonCatchWorker(object):
                             next_ball_type = pokeball
                             while(next_ball_type < 3):
                                 next_ball_type = next_ball_type+1
-                                if catch_rate[pokeball-1] < 0.20 and balls_stock[next_ball_type] > 0:
-                                    # if current ball chance to catch is under 20%, and player has better ball - then use it
+                                if catch_rate[pokeball-1] < 0.35 and balls_stock[next_ball_type] > 0:
+                                    # if current ball chance to catch is under 35%, and player has better ball - then use it
                                     pokeball = next_ball_type # use better ball
                                 
 
@@ -133,7 +133,7 @@ class PokemonCatchWorker(object):
                                 spawn_point_guid = spawnpoint_id,
                                 hit_pokemon = 1,
                                 spin_modifier = uniform(0.8, 1),
-                                NormalizedHitPosition = uniform(0.8, 1.3))
+                                NormalizedHitPosition = 1)
                             response_dict = self.api.call()
 
                             if response_dict and \
