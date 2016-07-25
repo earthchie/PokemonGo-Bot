@@ -246,7 +246,7 @@ class PokemonCatchWorker(object):
     def is_meet_requirements(self, pokemon, requirements):
         
         try:
-            if 'logic' in requirements and requirements['logic'] is 'or':
+            if 'logic' in requirements and requirements['logic'] == 'or':
                 is_pass = False
                 is_pass = is_pass or (pokemon['cp'] >= requirements['min_cp'])
                 is_pass = is_pass or (pokemon['individual_stamina'] >= requirements['iv_min_stamina'])
