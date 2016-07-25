@@ -159,16 +159,16 @@ class PokemonCatchWorker(object):
                                     else:   
                                         print_green('[x] Captured {}! [CP {}]'.format(pokemon_name, cp))
                                     
-                                        if whitelist:
+                                        #if whitelist:
                                             #self.api.set_favorite_pokemon(pokemon_id=pkmn_id[0], is_favorite=True)
                                             #response_dict = self.api.call()
                                             #print_red('[#] Favorited.')
                                             #print response_dict
                                         
-                                            nickname = '{}/{}/{}'.format(pokemon['pokemon_data']['individual_stamina'],pokemon['pokemon_data']['individual_attack'],pokemon['pokemon_data']['individual_defense'])
-                                            self.api.nickname_pokemon(pokemon_id=pkmn_id[0],nickname=nickname)
-                                            response_dict = self.api.call()
-                                            print('[#] Nicknamed to {}'.format(nickname))
+                                        nickname = '{}/{}/{}'.format(pokemon['pokemon_data']['individual_stamina'],pokemon['pokemon_data']['individual_attack'],pokemon['pokemon_data']['individual_defense'])
+                                        self.api.nickname_pokemon(pokemon_id=pkmn_id[0],nickname=nickname)
+                                        response_dict = self.api.call()
+                                        print('[#] Nicknamed to {}'.format(nickname))
                                             
                                         
                             break
