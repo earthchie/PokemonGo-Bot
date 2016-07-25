@@ -163,17 +163,16 @@ class PokemonCatchWorker(object):
                                         
                                         print_red('[x] Captured {}! [CP {}]'.format(pokemon_name, cp))
                                         if whitelist:
-                                            self.api.set_favorite_pokemon(pokemon_id=pokemon_to_transfer[0], is_favorite=True)
-                                            response_dict = self.api.call()
-                                            print_red('[#] Favorited.')
+                                            #self.api.set_favorite_pokemon(pokemon_id=pokemon_to_transfer[0], is_favorite=True)
+                                            #response_dict = self.api.call()
+                                            #print_red('[#] Favorited.')
                                             #print response_dict
                                         
-                                        #nickname = '{}/{}/{}'.format(pokemon['pokemon_data']['individual_stamina'],pokemon['pokemon_data']['individual_attack'],pokemon['pokemon_data']['individual_defense'])
-                                        #self.api.nickname_pokemon(pokemon_id=pokemon_to_transfer[0],nickname=nickname)
-                                        #response_dict = self.api.call()
-                                        #print response_dict
-                                        
-                                        #print('[#] nicknamed to {}'.format(nickname))
+                                            nickname = '{}/{}/{}'.format(pokemon['pokemon_data']['individual_stamina'],pokemon['pokemon_data']['individual_attack'],pokemon['pokemon_data']['individual_defense'])
+                                            self.api.nickname_pokemon(pokemon_id=pokemon_to_transfer[0],nickname=nickname)
+                                            response_dict = self.api.call()
+                                            print('[#] nicknamed to {}'.format(nickname))
+                                            
                                         
                             break
         time.sleep(5)

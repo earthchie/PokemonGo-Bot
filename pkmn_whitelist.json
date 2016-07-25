@@ -1,9 +1,9 @@
 {
 	"any": {
-		"min_cp": 700,
-		"iv_min_stamina": 15,
-		"iv_min_attack": 15,
-		"iv_min_defense": 15,
+		"min_cp": 1000,
+		"iv_min_stamina": 14,
+		"iv_min_attack": 14,
+		"iv_min_defense": 14,
 		"logic": "or"
 	},
 	
