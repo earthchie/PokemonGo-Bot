@@ -97,7 +97,7 @@ class SeenFortWorker(object):
                         item_name = self.item_list[item_id]
 
                         logger.log("[+] " + str(item_count) +
-                                    "x" + item_name +
+                                    "x " + item_name +
                                     " (Total: " + str(self.bot.item_inventory_count(item_id)) + ")", 'green')
                         
                         # RECYCLING UNWANTED ITEMS
@@ -113,7 +113,7 @@ class SeenFortWorker(object):
                                     'result' in response_dict_recycle['responses']['RECYCLE_INVENTORY_ITEM']:
                                 result = response_dict_recycle['responses']['RECYCLE_INVENTORY_ITEM']['result']
                             if result is 1: # Request success
-                                logger.log("[+] Dropped: " + str(item_count) + "x" + item_name + "...", 'yellow')
+                                logger.log("[+] Dropped: " + str(item_count) + "x " + item_name + "...", 'yellow')
                             else:
                                 logger.log("[-] Drop item failed!", 'red')
 
