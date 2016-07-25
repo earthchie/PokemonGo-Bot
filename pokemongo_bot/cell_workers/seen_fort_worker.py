@@ -28,15 +28,19 @@ class SeenFortWorker(object):
         fortID = self.fort['id']
         dist = distance(self.position[0], self.position[1], lat, lng)
         
+        fort_name = 'Unknown'
         self.api.fort_details(fort_id=self.fort['id'],
                               latitude=lat,
                               longitude=lng)
         response_dict = self.api.call()
-        fort_details = response_dict['responses']['FORT_DETAILS']
-        fort_name = fort_details['name'].encode('utf8', 'replace')
+        if 'responses' in response_dict \
+                and'FORT_DETAILS' in response_dict['responses'] \
+                and 'name' in response_dict['responses']['FORT_DETAILS']:
+            fort_details = response_dict['responses']['FORT_DETAILS']
+            fort_name = fort_details['name'].encode('utf8', 'replace')
+            
         # print('[#] Found fort {} at distance {}m'.format(fortID, dist))
-        logger.log('[#] Heading to {} ({})'.format(
-            fort_name, format_dist(dist, unit)))
+        logger.log('[#] Heading to {} ({})'.format(fort_name, format_dist(dist, unit)))
 
         if dist > 10:
             #logger.log('[#] Need to move closer to Pokestop')
@@ -51,19 +55,7 @@ class SeenFortWorker(object):
             logger.log('[#] Arrived at Pokestop')
             sleep(2)
 
-        self.api.fort_details(fort_id=self.fort['id'],
-                              latitude=lat,
-                              longitude=lng)
-        response_dict = self.api.call()
-        if 'responses' in response_dict \
-                and'FORT_DETAILS' in response_dict['responses'] \
-                and 'name' in response_dict['responses']['FORT_DETAILS']:
-            fort_details = response_dict['responses']['FORT_DETAILS']
-            fort_name = fort_details['name'].encode('utf8', 'replace')
-        else:
-            fort_name = 'Unknown'
-        logger.log('[#] Now at Pokestop: ' + fort_name + ' - Spinning...',
-                   'yellow')
+        logger.log('[#] Now at Pokestop: ' + fort_name + ' - Spinning...','yellow')
         sleep(2)
         self.api.fort_search(fort_id=self.fort['id'],
                              fort_latitude=lat,

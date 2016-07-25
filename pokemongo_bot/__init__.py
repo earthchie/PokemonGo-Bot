@@ -9,6 +9,7 @@ import datetime
 import sys
 import yaml
 import logger
+import time
 from pgoapi import PGoApi
 from cell_workers import PokemonCatchWorker, SeenFortWorker
 from cell_workers.utils import distance
@@ -35,6 +36,7 @@ class PokemonGoBot(object):
         self.stepper.take_step()
 
     def work_on_cell(self, cell, position, include_fort_on_path):
+        self.check_session(position)
         process_ignore = False
         try:
             with open("./data/catch-ignore.yml", 'r') as y:
@@ -146,11 +148,7 @@ class PokemonGoBot(object):
 
         self._set_starting_position()
 
-        if not self.api.login(self.config.auth_service,
-                              str(self.config.username),
-                              str(self.config.password)):
-            logger.log('Login Error, server busy', 'red')
-            exit(0)
+        self.login()
 
         # chain subrequests (methods) into one RPC call
 
@@ -171,7 +169,6 @@ class PokemonGoBot(object):
 
         pokecoins = '0'
         stardust = '0'
-        balls_stock = self.pokeball_inventory()
 
         if 'amount' in player['currencies'][0]:
             pokecoins = player['currencies'][0]['amount']
@@ -188,9 +185,10 @@ class PokemonGoBot(object):
                 'max_pokemon_storage']))
         logger.log('[#] Stardust: {}'.format(stardust))
         logger.log('[#] Pokecoins: {}'.format(pokecoins))
-        logger.log('[#] PokeBalls: ' + str(balls_stock[1]))
-        logger.log('[#] GreatBalls: ' + str(balls_stock[2]))
-        logger.log('[#] UltraBalls: ' + str(balls_stock[3]))
+        logger.log('[#] PokeBalls: ' + str(self.item_inventory_count(1)))
+        logger.log('[#] GreatBalls: ' + str(self.item_inventory_count(2)))
+        logger.log('[#] UltraBalls: ' + str(self.item_inventory_count(3)))
+        logger.log('[#] Razz Berry: ' + str(self.item_inventory_count(701)))
 
         # Testing
         # self.drop_item(Item.ITEM_POTION.value,1)
@@ -206,6 +204,30 @@ class PokemonGoBot(object):
     def drop_item(self, item_id, count):
         self.api.recycle_inventory_item(item_id=item_id, count=count)
         return self.api.call()
+
+    def check_session(self, position):
+        # Check session expiry
+        if self.api._auth_provider and self.api._auth_provider._ticket_expire:
+            remaining_time = self.api._auth_provider._ticket_expire/1000 - time.time()
+
+            if remaining_time < 60:
+                logger.log("Session stale, re-logging in", 'yellow')
+                self.position = position
+                self.login()
+
+    def login(self):
+        logger.log('[#] Attempting login to Pokemon Go.', 'white')
+        self.api._auth_token = None
+        self.api._auth_provider = None
+        self.api._api_endpoint = None
+        self.api.set_position(*self.position)
+        
+        while not self.api.login(self.config.auth_service,str(self.config.username),str(self.config.password)):
+            logger.log('[X] Login Error, server busy', 'red')
+            logger.log('[X] Waiting 10 seconds to try again', 'red')
+            time.sleep(10)
+        
+        logger.log('[+] Login to Pokemon Go successful.', 'green')
 
     def initial_transfer(self):
         logger.log('[x] Initial Transfer.')
@@ -295,39 +317,12 @@ class PokemonGoBot(object):
                                 'item'])
 
     def pokeball_inventory(self):
-        self.api.get_player().get_inventory()
-
-        inventory_req = self.api.call()
-        inventory_dict = inventory_req['responses']['GET_INVENTORY'][
-            'inventory_delta']['inventory_items']
-        with open('web/inventory-%s.json' %
-                  (self.config.username), 'w') as outfile:
-            json.dump(inventory_dict, outfile)
-
-        # get player balls stock
-        # ----------------------
-        balls_stock = {1: 0, 2: 0, 3: 0, 4: 0}
-
-        for item in inventory_dict:
-            try:
-                # print(item['inventory_item_data']['item'])
-                if item['inventory_item_data']['item'][
-                        'item_id'] == Item.ITEM_POKE_BALL.value:
-                    # print('Poke Ball count: ' + str(item['inventory_item_data']['item']['count']))
-                    balls_stock[1] = item[
-                        'inventory_item_data']['item']['count']
-                if item['inventory_item_data']['item'][
-                        'item_id'] == Item.ITEM_GREAT_BALL.value:
-                    # print('Great Ball count: ' + str(item['inventory_item_data']['item']['count']))
-                    balls_stock[2] = item[
-                        'inventory_item_data']['item']['count']
-                if item['inventory_item_data']['item'][
-                        'item_id'] == Item.ITEM_ULTRA_BALL.value:
-                    # print('Ultra Ball count: ' + str(item['inventory_item_data']['item']['count']))
-                    balls_stock[3] = item[
-                        'inventory_item_data']['item']['count']
-            except:
-                continue
+        balls_stock = {
+            1: self.item_inventory_count(1), 
+            2: self.item_inventory_count(2), 
+            3: self.item_inventory_count(3), 
+            4: self.item_inventory_count(4)
+        }
         return balls_stock
 
     def _set_starting_position(self):
