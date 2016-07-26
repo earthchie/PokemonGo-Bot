@@ -115,11 +115,15 @@ Go to [this](http://www.lfd.uci.edu/~gohlke/pythonlibs/#pyyaml) page and downloa
 (If running 64-bit python or if you get a 'not a supported wheel on this platform' error,
 download the 64 bit version instead: PyYAML-3.11-cp27-cp27m-win_amd64.whl )
 
+*(Run the following commands from Git Bash.)*
+
 ```
+// switch to the directory where you downloaded PyYAML
 $ cd download-directory
-$ pip install PyYAML-3.11-cp27-cp27m-win32.whl
-// if you needed to download the 64-bit version)
-// (replace PyYAML-3.11-cp27-cp27m-win32.whl with PyYAML-3.11-cp27-cp27m-win_amd64.whl
+// install 32-bit version
+$ pip2 install PyYAML-3.11-cp27-cp27m-win32.whl
+// if you need to install the 64-bit version, do this instead:
+// pip2 install PyYAML-3.11-cp27-cp27m-win_amd64.whl
 ```
 
 After this, just do:
@@ -127,7 +131,7 @@ After this, just do:
 ```
 $ git clone -b master https://github.com/PokemonGoF/PokemonGo-Bot  
 $ cd PokemonGo-Bot  
-$ pip install -r requirements.txt
+$ pip2 install -r requirements.txt
 $ git submodule init
 $ git submodule update
 ```
@@ -137,8 +141,9 @@ $ git submodule update
 ```
 $ git clone -b dev https://github.com/PokemonGoF/PokemonGo-Bot  
 $ cd PokemonGo-Bot  
-$ virtualenv .  
-$ source bin/activate  
+// create virtualenv using Python 2.7 executable
+$ virtualenv -p C:\python27\python.exe venv
+$ source venv/Scripts/activate  
 $ pip install -r requirements.txt  
 $ git submodule init
 $ git submodule update
@@ -170,20 +175,22 @@ Please keep in mind that this fix is only necessary if your python version don't
 To update your project do: `git pull` in the project folder
 
 ## Usage (up-to-date)
-  1/ copy `config.json.example` to `config.json` and `release_config.json.example` to `release_config.json`.
-  2/ Edit `config.json` and replace `auth_service`, `username`, `password`, `location` and `gmapkey` with your parameters (other keys are optional, check `Advance Configuration` below)
+  1. copy `config.json.example` to `config.json` and `release_config.json.example` to `release_config.json`
+  2. Edit `config.json` and replace `auth_service`, `username`, `password`, `location` and `gmapkey` with your parameters (other keys are optional, check `Advance Configuration` below)
 
 ## Advance Configuration
-- `max_steps` :
-- `mode` :
-- `walk` :
-- `debug` : Let the default value here except if you are developper
-- `test` : Let the default value here except if you are developper
-- `initial_transfer` : Set this to 1 if you want to transfer pokemon
-- `location_cache` : 
-- `distance_unit` :
-- `item_filter` :
-- `evolve_all` : Set to true to evolve pokemons if possible
+Option | Meaning
+------ | -------
+`max_steps` |		The steps around your initial location (DEFAULT 5 mean 25 cells around your location) that will be explored
+`mode` |  		Set farming Mode for the bot ('all', 'poke', 'farm'). 'all' means both spinning pokéstops and catching pokémon; 'poke'means only catching pokémon and 'farm' means only spinning pokéstops
+`walk` | Walk with the given speed (meters per second max 4.16 because of walking end on 15km/h)
+`debug` | 		Let the default value here except if you are developer
+`test` | 		Let the default value here except if you are developer
+`initial_transfer` | 	Set this to an upper bound of the cp level which you want to transfer at the beginning of the run. For example, set the value to 0 to disable the initial transfer, set it to 100 to enable initial transfer for cp levels 0-99. It will still transfer pokémon during your exploration, depending on how your release_config.json is setup.
+`location_cache` | Bot will start at last known location if you do not have location set in the config
+`distance_unit` | 	Set the unit to display distance in (e.g, km for kilometers, mi for miles, ft for feet)
+`item_filter` | 	Pass a list of unwanted items (in CSV format) to recycle when collected at a Pokestop (e.g, "101,102,103,104" to recycle potions when collected)
+`evolve_all` | 	Set to true to evolve pokemons if possible, takes pokémon as an argument as well.
 
 ## Catch Configuration
 Default configuration will capture all Pokemon.
@@ -210,7 +217,9 @@ will release all Pidgey caught.
     evolve specified pokemons on startup. This is especially useful for batch-evolving after popping up
     a lucky egg (currently this needs to be done manually).
     
-    The evolve all mechanism evolves only higher CP pokemons. It does this by first ordering them from high-to-low CP.
+    The evolve all mechanism evolves only higher IV/CP pokemons. It works by sorting the high CP pokemons (default: 300 CP or higher)
+    based on their IV values. After evolving all high CP pokemons, the mechanism will move on to evolving lower CP pokemons
+    only based on their CP (if it can).
     It will also automatically transfer the evolved pokemons based on the release configuration.
     
     Examples on how to use (set in config.json):
@@ -220,6 +229,10 @@ will release all Pidgey caught.
     2. "evolve_all": "Pidgey,Weedle"
       Will only evolve Pidgey and Weedle.
     3. Not setting evolve_all or having any other string would not evolve any pokemons on startup.
+    
+    If you wish to change the default threshold of 300 CP, simply add the following to the config file:
+    	"cp_min": <number>
+    
 
 ## How to run with Docker
 
